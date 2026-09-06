@@ -1,0 +1,112 @@
+
+
+cd "/mnt/c/Users/andre/Documents/Faks/aor2/AOR2_2026_Projekat_kod (1)/project"
+
+make -C guest clean
+make -C host clean
+
+make -C guest
+make -C host
+
+guest/build/guest.img
+host/build/hypervisor
+
+test_level_1();
+
+make -C guest
+printf 'K' | ./host/build/hypervisor \
+  -m 2 -p 4 -g guest/build/guest.img
+
+ocekivano:
+
+Type one character:
+Guest received: K
+
+ocekivano:
+
+printf 'AB' | ./host/build/hypervisor \
+  -m 4 -p 4 \
+  -g guest/build/guest.img guest/build/guest.img
+
+Expected output:
+
+Type one character:
+Guest received: A
+Type one character:
+Guest received: B
+
+test_level_2();
+
+printf 'shared-data' > shared.txt
+
+./host/build/hypervisor \
+  -m 4 -p 4 \
+  -g guest/build/guest.img guest/build/guest.img \
+  -f shared.txt
+
+Ocekivano:
+
+Local file: Hello from guest
+Shared before COW: shared-data
+Shared after COW: VMared-data
+
+latest=$(ls -td vm_files/run_* | head -1)
+echo "$latest"
+
+find "$latest" -type f -print
+
+$latest/vm_0/local.txt
+$latest/vm_0/shared.txt
+$latest/vm_1/local.txt
+$latest/vm_1/shared.txt
+
+cat "$latest/vm_0/local.txt"
+cat "$latest/vm_0/shared.txt"
+cat "$latest/vm_1/local.txt"
+cat "$latest/vm_1/shared.txt"
+
+cat shared.txt
+
+ocekivano:
+
+shared-data
+
+test_level_3();
+
+printf 'interrupt transfer data' > shared.txt
+
+./host/build/hypervisor \
+  -m 8 -p 2 \
+  -g guest/build/guest.img guest/build/guest.img guest/build/guest.img \
+  -f shared.txt
+
+Ocekivano:
+
+Writer VM
+Reader VM
+Reader VM
+Writer finished
+Reader finished
+Reader finished
+
+latest=$(ls -td vm_files/run_* | head -1)
+echo "$latest"
+
+$latest/vm_1/received.txt
+$latest/vm_2/received.txt
+
+cat "$latest/vm_1/received.txt"
+cat "$latest/vm_2/received.txt"
+
+Ocekivano:
+
+interrupt transfer data
+
+cmp shared.txt "$latest/vm_1/received.txt"
+cmp shared.txt "$latest/vm_2/received.txt"
+
+echo $?
+
+ocekivano:
+
+0
